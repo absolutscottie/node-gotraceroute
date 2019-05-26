@@ -1,2 +1,12 @@
 const ping = require("./build/Release/node-ping");
-console.log("Round trip time to host: " + ping.pingHost("www.flirt4free.com", 5));
+
+for(var i = 1; i < 30; i++) {
+  var resultStr = ping.pingHost("wowza001.rs-de.vs3.com", i, 2000, 1500);
+
+  var result = JSON.parse(resultStr);
+  console.log(result.number + ") " + result.address + " -> " + result.rtt);
+
+  if(result.complete) {
+    break;
+  }
+}
