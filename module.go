@@ -2,9 +2,6 @@ package main
 
 import (
 	"C"
-)
-
-import (
 	"encoding/json"
 	"net"
 	"os"
@@ -14,6 +11,8 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+//Hop is used to store information about each 'hop' along the way to the
+//destination of the trace
 type Hop struct {
 	Number   int    `json:"number"`
 	Address  string `json:"address"`
@@ -22,6 +21,12 @@ type Hop struct {
 	Error    string `json:"error"`
 }
 
+//PingHost accepts parameters about the attempted traceroute and performs a
+//single hop along that trace. The idea is to call this function in a loop
+//until the output indicates that the trace is complete.
+//
+//This function is exported and visible to C
+//
 //export PingHost
 func PingHost(hostname string, ttl, timeoutMillis, packetSize int) *C.char {
 	result := Hop{
@@ -49,6 +54,8 @@ func PingHost(hostname string, ttl, timeoutMillis, packetSize int) *C.char {
 		return EncodeResult(result)
 	}
 
+	//Quite a bit of this was borrowed from the example
+	//found on godoc.org that has since disappeared.
 	c, err := net.ListenPacket("ip4:1", "0.0.0.0") // ICMP for IPv4
 	if err != nil {
 		result.Error = err.Error()
@@ -127,18 +134,23 @@ func PingHost(hostname string, ttl, timeoutMillis, packetSize int) *C.char {
 		}
 		result.Rtt = int(rtt.Seconds() * 1000.0)
 		result.Complete = true
-
-	default:
-		//not sure
 	}
 
 	return EncodeResult(result)
 }
 
+//EncodeResult converts the hop data to json in a
+//format that can be read by c, javascript, etc
 func EncodeResult(result Hop) *C.char {
 	outputBytes, _ := json.Marshal(result)
 	return C.CString(string(outputBytes))
 }
 
+//useful for testing stand-alone with go
+/*
 func main() {
+	for i := 1; i < 30; i++ {
+		fmt.Printf("%s\n", C.GoString(PingHost("google.com", i, 2000, 50)))
+	}
 }
+*/
