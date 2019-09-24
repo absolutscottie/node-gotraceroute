@@ -1,4 +1,5 @@
 #include <node.h>
+#include <string>
 #include "module.h"
 
 namespace pingModule {
@@ -16,7 +17,7 @@ namespace pingModule {
     Isolate* isolate = args.GetIsolate();
 
     // Check the number of arguments passed.
-    if (args.Length() < 2) {
+    if (args.Length() < 4) {
       // Throw an Error that is passed back to JavaScript
       isolate->ThrowException(Exception::TypeError(
           String::NewFromUtf8(isolate, "Wrong number of arguments")));
@@ -24,22 +25,24 @@ namespace pingModule {
     }
 
     // Check the argument types
-    if (!args[1]->IsNumber()) {
+    if (!args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber()) {
       isolate->ThrowException(Exception::TypeError(
           String::NewFromUtf8(isolate, "Wrong arguments")));
       return;
     }
 
-    v8::String::Utf8Value hostname(args[0]->ToString());
-
-    // Perform the operation
-    Local<Number> rtt = Number::New(
-                          isolate,
-                          PingHost(GoString{*hostname, args[0]->ToString()->Length()}, args[1]->NumberValue()));
+    String::Utf8Value hostname(args[0]->ToString());
+    Local<String> result = String::NewFromUtf8(
+                            isolate,
+                            PingHost(
+                              GoString{*hostname, args[0]->ToString()->Length()},
+                              args[1]->NumberValue(),
+                              args[2]->NumberValue(),
+                              args[3]->NumberValue()));
 
     // Set the return value (using the passed in
     // FunctionCallbackInfo<Value>&)
-    args.GetReturnValue().Set(rtt);
+    args.GetReturnValue().Set(result);
   }
 
   void init(Local<Object> exports) {
